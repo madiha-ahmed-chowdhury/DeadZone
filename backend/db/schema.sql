@@ -65,6 +65,38 @@ create index if not exists pulses_place_text_idx
     on public.pulses (place_text);
 
 -- =========================================================
+-- needs — categorized, priority-scored aid requests
+-- (Need Broadcast Engine)
+-- =========================================================
+create table if not exists public.needs (
+    id           uuid primary key default gen_random_uuid(),
+    raw_text     text        not null,
+    need_text    text        not null,
+    category     text        not null default 'other', -- water | food | medical | shelter | other
+    place_text   text,
+    lat          double precision,
+    lng          double precision,
+    h3_cell      text references public.h3_hexes(cell_id) on delete set null,
+    priority     integer     not null default 1,        -- 1 (low) .. 5 (high)
+    urgent       boolean     not null default false,
+    status       text        not null default 'open',   -- open | acknowledged | dispatched | fulfilled
+    source       text        not null default 'bot',     -- bot | web | test
+    created_at   timestamptz not null default now()
+);
+
+create index if not exists needs_created_at_idx
+    on public.needs (created_at desc);
+
+create index if not exists needs_category_idx
+    on public.needs (category);
+
+create index if not exists needs_priority_idx
+    on public.needs (priority desc);
+
+create index if not exists needs_status_idx
+    on public.needs (status);
+
+-- =========================================================
 -- Realtime publication (Postgres Changes channel)
 -- =========================================================
 -- Drop & recreate to make the script idempotent.
@@ -75,6 +107,7 @@ begin
     ) then
         execute 'alter publication supabase_realtime drop table if exists public.pulses';
         execute 'alter publication supabase_realtime drop table if exists public.h3_hexes';
+        execute 'alter publication supabase_realtime drop table if exists public.needs';
     else
         create publication supabase_realtime;
     end if;
@@ -83,6 +116,7 @@ $$;
 
 alter publication supabase_realtime add table public.pulses;
 alter publication supabase_realtime add table public.h3_hexes;
+alter publication supabase_realtime add table public.needs;
 
 -- =========================================================
 -- Row Level Security
@@ -93,10 +127,12 @@ alter publication supabase_realtime add table public.h3_hexes;
 alter table public.users     enable row level security;
 alter table public.pulses    enable row level security;
 alter table public.h3_hexes  enable row level security;
+alter table public.needs     enable row level security;
 
 drop policy if exists "read public pulses"  on public.pulses;
 drop policy if exists "read public hexes"   on public.h3_hexes;
 drop policy if exists "read public users"   on public.users;
+drop policy if exists "read public needs"   on public.needs;
 
 create policy "read public pulses"
     on public.pulses for select
@@ -108,6 +144,10 @@ create policy "read public hexes"
 
 create policy "read public users"
     on public.users for select
+    using (true);
+
+create policy "read public needs"
+    on public.needs for select
     using (true);
 
 -- =========================================================
@@ -127,3 +167,4 @@ grant select on public.v_recent_hexes to anon, authenticated;
 grant select on public.pulses          to anon, authenticated;
 grant select on public.h3_hexes        to anon, authenticated;
 grant select on public.users           to anon, authenticated;
+grant select on public.needs           to anon, authenticated;

@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     # Dry run disables Supabase writes (helpful for local frontend iteration)
     dry_run: bool = Field(default=False, alias="DEADZONE_DRY_RUN")
 
+    # Base URL of the FastAPI backend, used by the Telegram bot process
+    # (which runs separately from uvicorn) to call the pulse/need endpoints.
+    api_base_url: str = Field(default="http://localhost:8000", alias="API_BASE_URL")
+
     @field_validator("supabase_url", "supabase_service_key", "telegram_bot_token")
     @classmethod
     def _strip(cls, v: str) -> str:
