@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+.env
+.env.local
+.env.*.local
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+.turbo/
+.parcel-cache/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# Editors / OS
+.vscode/
+.idea/
+.puku/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Supabase / local data
+supabase/.branches
+supabase/.temp
+*.sqlite
+*.db
+
+# Logs
+logs/
+*.log
