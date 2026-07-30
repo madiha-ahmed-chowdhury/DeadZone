@@ -35,17 +35,15 @@ Citizens can report that they are **safe ("I'm Alive")** or request **urgent ass
 
 ## Coordinator Dashboard
 
-> *(Add dashboard screenshot here)*
 
-![Dashboard](docs/dashboard.png)
+<img width="1520" height="710" alt="image" src="https://github.com/user-attachments/assets/e196c007-7724-46b0-8d4d-7e0b1b6f2c3d" />
+
 
 ---
 
 ## Telegram Bot
+<img width="372" height="465" alt="image" src="https://github.com/user-attachments/assets/164e570f-8672-4322-acbd-620f780e7d74" />
 
-> *(Add Telegram bot screenshot here)*
-
-![Telegram](docs/telegram.png)
 
 ---
 
@@ -458,25 +456,7 @@ Upcoming
 
 ---
 
-# Demo
 
-## Live Dashboard
-
-*(Add deployed URL here)*
-
----
-
-## API
-
-*(Add Swagger URL here)*
-
----
-
-## Telegram Bot
-
-*(Add bot link here)*
-
----
 
 ## Demo Video
 
