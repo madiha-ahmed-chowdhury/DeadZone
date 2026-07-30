@@ -21,44 +21,114 @@ from typing import Dict, List, Optional, Tuple
 
 # Trailing "need" indicator words/phrases, most specific first is not
 # required here — find_need_indicator() picks whichever occurs earliest.
-NEED_INDICATORS: Tuple[str, ...] = (
+
+NEED_INDICATORS = (
     "দরকার",
     "প্রয়োজন",
     "লাগবে",
     "চাই",
+    "প্রয়োজন",
+    "চাইছি",
+    "চাচ্ছি",
     "need",
+    "needs",
     "needed",
     "require",
+    "required",
+    "want",
+    "help",
 )
 
 # category -> keywords that identify it. Checked in this order, so a more
 # specific phrase (e.g. "খাবার পানি") should be listed ahead of a broader
 # one only where it changes the outcome — here "পানি" alone is enough since
 # any mention of water should route to the water category.
-CATEGORY_KEYWORDS: Dict[str, Tuple[str, ...]] = {
+CATEGORY_KEYWORDS = {
     "medical": (
-        "ঔষধ", "ওষুধ", "মেডিসিন", "ডাক্তার", "চিকিৎসা", "হাসপাতাল",
-        "ইনসুলিন", "স্যালাইন", "medicine", "doctor", "medical", "hospital",
+        "ঔষধ",
+        "ওষুধ",
+        "মেডিসিন",
+        "ডাক্তার",
+        "চিকিৎসা",
+        "হাসপাতাল",
+        "অ্যাম্বুলেন্স",
+        "রক্ত",
+        "ইনসুলিন",
+        "স্যালাইন",
+        "medicine",
+        "medical",
+        "doctor",
+        "hospital",
+        "ambulance",
+        "blood",
+        "insulin",
     ),
+
     "water": (
-        "খাবার পানি", "বিশুদ্ধ পানি", "পানি", "water",
+        "পানি",
+        "বিশুদ্ধ পানি",
+        "খাবার পানি",
+        "পানীয় জল",
+        "জল",
+        "water",
+        "drinking water",
     ),
+
     "food": (
-        "খাবার", "খাদ্য", "চাল", "food", "rice",
+        "খাবার",
+        "খাদ্য",
+        "শুকনো খাবার",
+        "চাল",
+        "ডাল",
+        "রুটি",
+        "বিস্কুট",
+        "দুধ",
+        "food",
+        "rice",
+        "bread",
+        "milk",
+        "biscuits",
     ),
+
     "shelter": (
-        "আশ্রয়", "থাকার জায়গা", "তাঁবু", "ঘর", "shelter", "tent",
+        "আশ্রয়",
+        "ঘর",
+        "বাসা",
+        "থাকার জায়গা",
+        "তাঁবু",
+        "কম্বল",
+        "shelter",
+        "tent",
+        "blanket",
+        "house",
     ),
 }
-
 # Presence of any of these bumps the priority score up a notch — used to
 # surface reports mentioning children, the elderly, pregnancy, or explicit
 # emergency language above routine requests in the same category.
-URGENCY_KEYWORDS: Tuple[str, ...] = (
-    "জরুরি", "গুরুতর", "মুমূর্ষু", "শিশু", "গর্ভবতী", "বৃদ্ধ",
-    "urgent", "emergency", "critical", "dying",
-)
 
+URGENCY_KEYWORDS = (
+    "জরুরি",
+    "অতি জরুরি",
+    "খুব জরুরি",
+    "বাঁচান",
+    "বিপদে",
+    "আটকে",
+    "আহত",
+    "গুরুতর",
+    "মুমূর্ষু",
+    "শিশু",
+    "বৃদ্ধ",
+    "গর্ভবতী",
+    "রক্তপাত",
+    "urgent",
+    "emergency",
+    "critical",
+    "dying",
+    "trapped",
+    "injured",
+    "bleeding",
+)
 # Base priority per category (1 = lowest, 5 = highest). Medical need
 # generally outranks food/shelter in crisis triage; "other" sits lowest
 # since it's an unclassified catch-all.
@@ -148,6 +218,71 @@ def extract_place(text: str, indicator_end: int) -> Optional[str]:
 
 
 def parse_need(raw_text: str) -> Optional[ParsedNeed]:
+    if not raw_text:
+        return None
+
+    text = _normalize(raw_text)
+    lower = text.lower()
+
+    indicator = None
+    start = end = -1
+
+    for word in NEED_INDICATORS:
+        idx = lower.find(word.lower())
+        if idx != -1:
+            indicator = word
+            start = idx
+            end = idx + len(word)
+            break
+
+    if indicator is None:
+        return None
+
+    before = _normalize(_PUNCT_TRIM_RE.sub("", text[:start]))
+    after = _normalize(_PUNCT_TRIM_RE.sub("", text[end:]))
+
+    need_text = ""
+    place = None
+
+    if before and after:
+        # Example:
+        # পানি দরকার, চট্টগ্রাম
+        # খাবার চাই ঢাকা
+        need_text = before
+        place = extract_place(text, end)
+
+    elif before:
+        # Example:
+        # খাবার দরকার
+        need_text = before
+
+    elif after:
+        # Example:
+        # দরকার পানি
+        words = after.split()
+
+        if len(words) == 1:
+            need_text = words[0]
+
+        elif len(words) >= 2:
+            need_text = words[0]
+            place = " ".join(words[1:])
+
+    if not need_text:
+        return None
+
+    category = classify(need_text)
+    urgent = _is_urgent(text)
+    priority = score_priority(category, urgent)
+
+    return ParsedNeed(
+        need_text=need_text,
+        category=category,
+        place_text=place,
+        priority=priority,
+        urgent=urgent,
+        raw_text=text,
+    )
     """Parse one raw message into a :class:`ParsedNeed`, or ``None`` if it
     doesn't look like a need report at all."""
     if not raw_text:

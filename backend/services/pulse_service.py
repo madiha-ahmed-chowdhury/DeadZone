@@ -97,7 +97,7 @@ class PulseService:
             "confidence": confidence,
             "matched_kind": matched_kind,
             "source": source,
-            "created_at": now,
+            "created_at": now.isoformat(),
         }
 
         if h3_cell:

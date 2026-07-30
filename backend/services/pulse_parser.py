@@ -17,18 +17,22 @@ from typing import List, Optional, Tuple
 
 # Bangla "I'm alive" phrases, ordered from most to least specific.
 # Adding more variants? Append here — the parser is regex-driven.
-ALIVE_PHRASES: Tuple[str, ...] = (
+ALIVE_PHRASES = (
     "আমি ঠিক আছি",
+    "আমি নিরাপদে আছি",
+    "আমি নিরাপদ আছি",
     "আমি বেঁচে আছি",
     "আমি সুস্থ আছি",
-    "আমি নিরাপদ আছি",
+    "আমি ভালো আছি",
     "আমি বিপদে নেই",
+    "আমরা ঠিক আছি",
+    "আমরা নিরাপদে আছি",
+    "I'm safe",
+    "I am safe",
     "I'm alive",
     "I am alive",
-    "im alive",
     "safe",
 )
-
 
 # Optional location connective words that people often use in Bangla,
 # e.g. "...আছি, ঢাকা" or "...আছি - সিলেট" or "...আছি (মিরপুর ১০)".

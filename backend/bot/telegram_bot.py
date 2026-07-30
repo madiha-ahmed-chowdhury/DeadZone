@@ -109,6 +109,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             json={"raw_text": text, "telegram_id": telegram_id, "source": "bot"},
             headers=headers,
         )
+        # print("Need status:", need_resp.status_code)
+        # print("Need body:", need_resp.text)
         if need_resp.status_code == 201:
             data = need_resp.json()
             category_bn = CATEGORY_LABEL_BN.get(data["category"], data["category"])
