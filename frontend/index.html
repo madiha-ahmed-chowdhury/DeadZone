@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DeadZone — Live Crisis Map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">◈</span>
+    <div class="brand-text">
+      <h1>DEADZONE</h1>
+      <p>The Internet Is a Privilege. Survival Isn't.</p>
+    </div>
+  </div>
+
+  <div class="stats" id="stats">
+    <div class="stat">
+      <span class="stat-value" id="stat-pulses">0</span>
+      <span class="stat-label">Pulses</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value" id="stat-open-needs">0</span>
+      <span class="stat-label">Open Needs</span>
+    </div>
+    <div class="stat stat-danger">
+      <span class="stat-value" id="stat-dead-zones">0</span>
+      <span class="stat-label">Dead Zones</span>
+    </div>
+  </div>
+
+  <div class="conn-status" id="conn-status">
+    <span class="dot" id="conn-dot"></span>
+    <span id="conn-label">connecting…</span>
+  </div>
+
+  <button class="settings-btn" id="settings-btn" title="Backend settings">⚙</button>
+</header>
+
+<main class="layout">
+  <section class="map-pane">
+    <div id="map"></div>
+    <div class="legend">
+      <div class="legend-title">Last signal</div>
+      <div class="legend-row"><span class="swatch swatch-live"></span> &lt; 15 min</div>
+      <div class="legend-row"><span class="swatch swatch-stale"></span> 15–60 min</div>
+      <div class="legend-row"><span class="swatch swatch-dead"></span> &gt; 60 min — dead zone</div>
+    </div>
+  </section>
+
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2>Need Broadcast Queue</h2>
+      <div class="filters">
+        <select id="filter-category">
+          <option value="">All categories</option>
+          <option value="medical">Medical</option>
+          <option value="water">Water</option>
+          <option value="food">Food</option>
+          <option value="shelter">Shelter</option>
+          <option value="other">Other</option>
+        </select>
+        <select id="filter-status">
+          <option value="">All statuses</option>
+          <option value="open" selected>Open</option>
+          <option value="acknowledged">Acknowledged</option>
+          <option value="dispatched">Dispatched</option>
+          <option value="fulfilled">Fulfilled</option>
+        </select>
+      </div>
+    </div>
+    <div class="needs-list" id="needs-list">
+      <div class="empty-state">Waiting for reports…</div>
+    </div>
+  </aside>
+</main>
+
+<div class="settings-panel hidden" id="settings-panel">
+  <div class="settings-card">
+    <h3>Backend connection</h3>
+    <label>API base URL</label>
+    <input type="text" id="cfg-api-url" placeholder="http://localhost:8000" />
+    <label>Coordinator key <span class="hint">(needed to update need status)</span></label>
+    <input type="password" id="cfg-api-key" placeholder="X-API-Key" />
+    <div class="settings-actions">
+      <button id="cfg-save">Save</button>
+      <button id="cfg-cancel" class="secondary">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/h3-js@4.1.0/dist/h3-js.umd.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

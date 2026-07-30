@@ -143,23 +143,17 @@ class PulseService:
         centroid_lat, centroid_lng = h3.h3_to_geo(h3_cell)
 
         if self._client is not None:
-            existing = (
-                self._client.table("h3_hexes")
-                .select("pulse_count")
-                .eq("cell_id", h3_cell)
-                .limit(1)
-                .execute()
-            )
-            count = (existing.data[0]["pulse_count"] if existing.data else 0) + 1
-            self._client.table("h3_hexes").upsert(
+            # Atomic increment on the Postgres side (see increment_hex() in
+            # schema.sql) — avoids the read-then-write race of the old
+            # select-count / upsert-count+1 pattern under concurrent writes.
+            self._client.rpc(
+                "increment_hex",
                 {
-                    "cell_id": h3_cell,
-                    "centroid_lat": centroid_lat,
-                    "centroid_lng": centroid_lng,
-                    "last_pulse_at": when.isoformat(),
-                    "pulse_count": count,
-                    "updated_at": when.isoformat(),
-                }
+                    "p_cell_id": h3_cell,
+                    "p_centroid_lat": centroid_lat,
+                    "p_centroid_lng": centroid_lng,
+                    "p_when": when.isoformat(),
+                },
             ).execute()
             return
 

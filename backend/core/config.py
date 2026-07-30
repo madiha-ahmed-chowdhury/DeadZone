@@ -41,6 +41,12 @@ class Settings(BaseSettings):
     # (which runs separately from uvicorn) to call the pulse/need endpoints.
     api_base_url: str = Field(default="http://localhost:8000", alias="API_BASE_URL")
 
+    # Shared secret required on write endpoints (create pulse/need, update
+    # need status). Empty in local dev = auth disabled, so `curl` still
+    # works without setup; set it before deploying anywhere public so
+    # randoms can't forge safety signals or mark real aid requests fulfilled.
+    backend_api_key: str = Field(default="", alias="BACKEND_API_KEY")
+
     @field_validator("supabase_url", "supabase_service_key", "telegram_bot_token")
     @classmethod
     def _strip(cls, v: str) -> str:
@@ -57,6 +63,10 @@ class Settings(BaseSettings):
     @property
     def has_telegram(self) -> bool:
         return bool(self.telegram_bot_token)
+
+    @property
+    def has_api_key(self) -> bool:
+        return bool(self.backend_api_key)
 
 
 @lru_cache(maxsize=1)

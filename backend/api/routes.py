@@ -10,10 +10,11 @@ The route handlers delegate parsing, geocoding, indexing, and persistence to
 ``services.pulse_service`` so this module stays focused on transport.
 """
 
+import secrets
 from datetime import datetime, timezone
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from core.config import Settings, get_settings
@@ -115,6 +116,23 @@ def get_need_service(settings: Settings = Depends(get_settings)) -> NeedService:
     return NeedService(settings)
 
 
+def require_api_key(
+    x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
+    settings: Settings = Depends(get_settings),
+) -> None:
+    """Gate write endpoints behind a shared secret.
+
+    If BACKEND_API_KEY isn't set (local dev / DRY_RUN demo), auth is
+    skipped so curl/tests keep working without setup. Set it before any
+    public deployment — without this, anyone with the URL can forge
+    'I'm alive' pulses or flip a real aid request to 'fulfilled'.
+    """
+    if not settings.has_api_key:
+        return
+    if not x_api_key or not secrets.compare_digest(x_api_key, settings.backend_api_key):
+        raise HTTPException(status_code=401, detail="Missing or invalid X-API-Key")
+
+
 # ---------- Endpoints ----------
 
 
@@ -129,6 +147,7 @@ def healthz() -> dict:
     response_model=CreatePulseOut,
     status_code=201,
     tags=["pulses"],
+    dependencies=[Depends(require_api_key)],
 )
 def create_pulse(
     payload: CreatePulseIn,
@@ -185,6 +204,7 @@ def list_hex_summaries(
     response_model=CreateNeedOut,
     status_code=201,
     tags=["needs"],
+    dependencies=[Depends(require_api_key)],
 )
 def create_need(
     payload: CreateNeedIn,
@@ -240,7 +260,12 @@ def list_needs(
     return [NeedOut(**r) for r in rows]
 
 
-@router.patch("/api/v1/needs/{need_id}/status", response_model=NeedOut, tags=["needs"])
+@router.patch(
+    "/api/v1/needs/{need_id}/status",
+    response_model=NeedOut,
+    tags=["needs"],
+    dependencies=[Depends(require_api_key)],
+)
 def update_need_status(
     need_id: str,
     payload: UpdateNeedStatusIn,

@@ -77,6 +77,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     telegram_id = update.effective_user.id if update.effective_user else None
     text = message.text.strip()
 
+    headers = {"X-API-Key": settings.backend_api_key} if settings.has_api_key else {}
+
     async with httpx.AsyncClient(base_url=settings.api_base_url, timeout=10.0) as client:
         try:
             # 1. Try the "I'm alive" pulse first — safety signals take
@@ -84,6 +86,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             pulse_resp = await client.post(
                 "/api/v1/pulses",
                 json={"raw_text": text, "telegram_id": telegram_id, "source": "bot"},
+                headers=headers,
             )
         except httpx.HTTPError:
             log.exception("failed to reach DeadZone API at %s", settings.api_base_url)
@@ -104,6 +107,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         need_resp = await client.post(
             "/api/v1/needs",
             json={"raw_text": text, "telegram_id": telegram_id, "source": "bot"},
+            headers=headers,
         )
         if need_resp.status_code == 201:
             data = need_resp.json()

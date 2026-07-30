@@ -134,16 +134,16 @@ drop policy if exists "read public hexes"   on public.h3_hexes;
 drop policy if exists "read public users"   on public.users;
 drop policy if exists "read public needs"   on public.needs;
 
+-- NOTE: users is intentionally NOT given a public read policy. It stores
+-- telegram_id, which would let anyone holding the anon key deanonymize
+-- who sent which pulse/need. The service-role key (used only by the
+-- FastAPI backend) bypasses RLS and can still read it server-side.
 create policy "read public pulses"
     on public.pulses for select
     using (true);
 
 create policy "read public hexes"
     on public.h3_hexes for select
-    using (true);
-
-create policy "read public users"
-    on public.users for select
     using (true);
 
 create policy "read public needs"
@@ -166,5 +166,27 @@ create or replace view public.v_recent_hexes as
 grant select on public.v_recent_hexes to anon, authenticated;
 grant select on public.pulses          to anon, authenticated;
 grant select on public.h3_hexes        to anon, authenticated;
-grant select on public.users           to anon, authenticated;
 grant select on public.needs           to anon, authenticated;
+-- public.users is NOT granted to anon/authenticated — see RLS note above.
+
+-- =========================================================
+-- Atomic hex-count increment (fixes a read-then-write race in the old
+-- Python-side "select count, then upsert count+1" pattern, which could
+-- lose increments under concurrent pulses).
+-- =========================================================
+create or replace function public.increment_hex(
+    p_cell_id      text,
+    p_centroid_lat double precision,
+    p_centroid_lng double precision,
+    p_when         timestamptz
+) returns public.h3_hexes
+language sql
+as $$
+    insert into public.h3_hexes (cell_id, centroid_lat, centroid_lng, last_pulse_at, pulse_count, updated_at)
+    values (p_cell_id, p_centroid_lat, p_centroid_lng, p_when, 1, p_when)
+    on conflict (cell_id) do update
+        set pulse_count   = public.h3_hexes.pulse_count + 1,
+            last_pulse_at = excluded.last_pulse_at,
+            updated_at    = excluded.updated_at
+    returning *;
+$$;
