@@ -100,19 +100,13 @@ class NeedService:
             "created_at": now.isoformat(),
         }
 
+        if h3_cell:
+            self._touch_hex(h3_cell, now)
+
         if self._client is not None:
             saved = self._client.table("needs").insert(row).execute().data[0]
         else:
             saved = self._memory.needs.insert(row)
-
-        now = datetime.now(timezone.utc)
-
-...
-
-        if h3_cell:
-            self._touch_hex(h3_cell, now)
-
-        saved = self._client.table("needs").insert(row).execute().data[0]
 
         return NeedCreateResult(
             id=str(saved["id"]),
@@ -128,18 +122,37 @@ class NeedService:
             created_at=saved.get("created_at", now),
         )
 
-    def _touch_hex(self, h3_cell: str, when: datetime):
-    centroid_lat, centroid_lng = h3.h3_to_geo(h3_cell)
+    def _touch_hex(self, h3_cell: str, when: datetime) -> None:
+        """Upsert the h3_hexes rollup row used by the Dead Zone heatmap."""
+        centroid_lat, centroid_lng = h3.h3_to_geo(h3_cell)
 
-    self._client.rpc(
-        "increment_hex",
-        {
-            "p_cell_id": h3_cell,
-            "p_centroid_lat": centroid_lat,
-            "p_centroid_lng": centroid_lng,
-            "p_when": when.isoformat(),
-        },
-    ).execute()
+        if self._client is not None:
+            self._client.rpc(
+                "increment_hex",
+                {
+                    "p_cell_id": h3_cell,
+                    "p_centroid_lat": centroid_lat,
+                    "p_centroid_lng": centroid_lng,
+                    "p_when": when.isoformat(),
+                },
+            ).execute()
+            return
+
+        existing_row = self._memory.h3_hexes.get(h3_cell) or {}
+        count = existing_row.get("pulse_count", 0) + 1
+        self._memory.h3_hexes.upsert(
+            h3_cell,
+            {
+                "cell_id": h3_cell,
+                "h3_cell": h3_cell,
+                "centroid_lat": centroid_lat,
+                "centroid_lng": centroid_lng,
+                "last_pulse_at": when,
+                "pulse_count": count,
+                "updated_at": when,
+            },
+        )
+
     def mark_status(self, need_id: str, status: str) -> Optional[Dict[str, Any]]:
         """Coordinator updates a need's status (open/acknowledged/dispatched/
         fulfilled). Full dispatch bookkeeping — which coordinator, which

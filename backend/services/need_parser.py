@@ -283,38 +283,6 @@ def parse_need(raw_text: str) -> Optional[ParsedNeed]:
         urgent=urgent,
         raw_text=text,
     )
-    """Parse one raw message into a :class:`ParsedNeed`, or ``None`` if it
-    doesn't look like a need report at all."""
-    if not raw_text:
-        return None
-    text = raw_text.strip()
-    if not text:
-        return None
-
-    found = find_need_indicator(text)
-    if not found:
-        return None
-
-    indicator, start, end = found
-    need_text = _normalize(_PUNCT_TRIM_RE.sub("", text[:start]))
-    if not need_text:
-        # A bare "দরকার" with nothing describing what's needed isn't
-        # actionable — don't manufacture a category out of nothing.
-        return None
-
-    place = extract_place(text, end)
-    category = classify(need_text)
-    urgent = _is_urgent(text)
-    priority = score_priority(category, urgent)
-
-    return ParsedNeed(
-        need_text=need_text,
-        category=category,
-        place_text=place,
-        priority=priority,
-        urgent=urgent,
-        raw_text=text,
-    )
 
 
 def _smoke() -> List[ParsedNeed]:  # pragma: no cover - dev helper
