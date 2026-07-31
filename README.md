@@ -2,185 +2,468 @@
 
 > **"The Internet Is a Privilege. Survival Isn't."**
 
-A dual-interface crisis coordination platform for Bangladesh. Civilians send
-"I'm Alive" pulses in Bangla via a Telegram bot; coordinators (NGOs, relief
-workers, journalists, families) watch a live crisis map showing active pulses
-and a **Dead Zone heatmap** of areas that have gone silent.
+![Python](https://img.shields.io/badge/Python-3.12-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.111-green)
+![Supabase](https://img.shields.io/badge/Supabase-Backend-3ECF8E)
+![Telegram](https://img.shields.io/badge/Telegram-Bot-26A5E4)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
-This repository hosts the thin-slice MVP: a Telegram bot, FastAPI backend,
-Supabase database, and a coordinator dashboard rendered with Leaflet + an h3
-hex-grid over Bangladesh.
+DeadZone is a disaster communication platform designed for regions where internet connectivity becomes unreliable during emergencies.
 
-## Monorepo structure
+Citizens can report that they are **safe ("I'm Alive")** or request **urgent assistance** in Bangla through a Telegram bot. Reports are automatically parsed, geocoded, prioritized, and visualized on a live coordinator dashboard featuring an H3-powered **Dead Zone Heatmap**, enabling NGOs, volunteers, journalists, and families to identify silent regions and coordinate relief efforts efficiently.
+
+---
+
+# Features
+
+- 🇧🇩 Bangla Natural Language Processing
+- ✅ "I'm Alive" Pulse Engine
+- 🚨 Need Broadcast Engine
+- 📍 Automatic location extraction
+- 🗺️ Interactive crisis map
+- 🔥 Dead Zone Heatmap using Uber H3
+- 🤖 Telegram Bot interface
+- ⚡ FastAPI REST API
+- 🧠 Automatic need categorization & priority scoring
+- ☁️ Supabase database
+- 🌐 Live coordinator dashboard
+- 🔒 API-key protected write endpoints
+
+---
+
+# Screenshots
+
+## Coordinator Dashboard
+
+
+<img width="1520" height="710" alt="image" src="https://github.com/user-attachments/assets/e196c007-7724-46b0-8d4d-7e0b1b6f2c3d" />
+
+
+---
+
+## Telegram Bot
+<img width="372" height="465" alt="image" src="https://github.com/user-attachments/assets/164e570f-8672-4322-acbd-620f780e7d74" />
+
+
+---
+
+# Architecture
+
+```
+                    Citizens
+
+                        │
+                        ▼
+
+                Telegram Bot
+
+                        │
+                        ▼
+
+                 FastAPI Backend
+
+       ┌──────────┼───────────┐
+
+       ▼          ▼           ▼
+
+ Pulse Engine  Need Engine  Geocoder
+
+       │          │
+
+       └──────┬───┘
+
+              ▼
+
+         H3 Indexing
+
+              ▼
+
+          Supabase
+
+              ▼
+
+     Coordinator Dashboard
+```
+
+---
+
+# Monorepo Structure
 
 ```
 .
-├── backend/        # FastAPI + python-telegram-bot
-│   ├── api/        # HTTP + WebSocket routes
-│   ├── bot/        # Telegram bot handlers + entrypoint
-│   ├── db/         # Supabase schema + client wrapper
-│   └── services/   # Pulse parser, geocoder, h3 indexer, pulse service
-├── frontend/       # Static HTML/CSS/JS dashboard (Leaflet + h3-js, no build step)
-└── render.yaml     # One-click Render blueprint (api + static site + bot worker)
+├── backend/
+│   ├── api/
+│   ├── bot/
+│   ├── core/
+│   ├── db/
+│   ├── services/
+│   ├── main.py
+│   └── requirements.txt
+│
+├── frontend/
+│   ├── index.html
+│   ├── app.js
+│   ├── styles.css
+│   └── assets/
+│
+├── docs/
+│   ├── dashboard.png
+│   └── telegram.png
+│
+├── render.yaml
+├── README.md
+└── LICENSE
 ```
 
-## Quick start (local development)
+---
 
-### 1. Backend
+# Example Messages
+
+### ✅ I'm Alive
+
+```
+আমি ঠিক আছি, ঢাকা
+
+আমি নিরাপদ, চট্টগ্রাম
+
+I'm safe, Dhaka
+
+I'm okay, Sylhet
+```
+
+---
+
+### 🚨 Need Reports
+
+```
+পানি দরকার, চট্টগ্রাম
+
+জরুরি ঔষধ লাগবে, সিলেট
+
+খাবার চাই, কুমিল্লা
+
+আশ্রয় দরকার, কক্সবাজার
+
+Medical help needed, Dhaka
+```
+
+---
+
+# Need Categories
+
+| Category | Example |
+|----------|---------|
+| Water | পানি দরকার |
+| Food | খাবার দরকার |
+| Medical | ঔষধ লাগবে |
+| Shelter | আশ্রয় দরকার |
+| Other | Miscellaneous requests |
+
+Urgency keywords automatically increase priority.
+
+Examples:
+
+```
+জরুরি ঔষধ লাগবে, সিলেট
+```
+
+becomes
+
+```
+Category: Medical
+Priority: 5
+Urgent: Yes
+```
+
+---
+
+# Coordinator Dashboard
+
+The dashboard provides:
+
+- 🟢 Live pulse locations
+- 🔥 Dead Zone heatmap
+- 🚨 Priority-sorted aid requests
+- 📍 Interactive Leaflet map
+- 🔍 Category & status filtering
+- ✔️ Status updates
+
+Need status workflow:
+
+```
+Open
+
+↓
+
+Acknowledged
+
+↓
+
+Dispatched
+
+↓
+
+Fulfilled
+```
+
+---
+
+# REST API
+
+## Health
+
+```
+GET /healthz
+```
+
+---
+
+## Pulses
+
+```
+POST /api/v1/pulses
+
+GET /api/v1/pulses
+
+GET /api/v1/hexes
+```
+
+---
+
+## Needs
+
+```
+POST /api/v1/needs
+
+GET /api/v1/needs
+
+PATCH /api/v1/needs/{id}/status
+```
+
+Interactive API documentation is available through Swagger:
+
+```
+http://localhost:8000/docs
+```
+
+---
+
+# Tech Stack
+
+## Backend
+
+- Python 3.12
+- FastAPI
+- Uvicorn
+- Supabase
+- PostgreSQL
+- H3
+- python-telegram-bot
+- Pydantic
+
+---
+
+## Frontend
+
+- HTML5
+- CSS3
+- JavaScript
+- Leaflet
+- h3-js
+
+---
+
+## Infrastructure
+
+- Render
+- GitHub
+- Telegram Bot API
+- Supabase
+
+---
+
+# Quick Start
+
+## Clone
+
+```bash
+git clone https://github.com/madiha-ahmed-chowdhury/DeadZone.git
+
+cd DeadZone
+```
+
+---
+
+## Backend
 
 ```bash
 cd backend
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env   # fill in SUPABASE_URL, SUPABASE_SERVICE_KEY, TELEGRAM_BOT_TOKEN
-uvicorn main:app --reload --port 8000
+
+python -m venv .venv
+
+source .venv/bin/activate
 ```
 
-Health check: `curl http://localhost:8000/healthz` → `{"ok": true}`
+Windows
 
-### 2. Apply the database schema
+```powershell
+.venv\Scripts\activate
+```
 
-In the Supabase SQL editor, paste and run `backend/db/schema.sql`.
-
-Or via the Supabase CLI:
+Install dependencies
 
 ```bash
-supabase db reset          # local
-supabase db push           # linked project
+pip install -r requirements.txt
 ```
 
-### 3. Frontend
+Copy environment file
 
-No build step — it's plain HTML/CSS/JS (Leaflet + h3-js from CDN).
+```bash
+cp .env.example .env
+```
+
+Fill in
+
+```
+SUPABASE_URL
+
+SUPABASE_SERVICE_KEY
+
+TELEGRAM_BOT_TOKEN
+
+BACKEND_API_KEY
+```
+
+Run
+
+```bash
+uvicorn main:app --reload
+```
+
+---
+
+## Frontend
 
 ```bash
 cd frontend
+
 python -m http.server 8080
 ```
 
-Open <http://localhost:8080>. On first load it'll prompt for the API base
-URL (defaults to `http://localhost:8000` on localhost) and, optionally, a
-coordinator key (`BACKEND_API_KEY`) if you've set one on the backend —
-without it the map and needs queue are still viewable, but status-update
-buttons stay disabled since updating a need's status is a coordinator-only
-action.
+Open
 
-### 4. Telegram bot
+```
+http://localhost:8080
+```
 
-Create a bot with [@BotFather](https://t.me/BotFather), copy the token into
-`backend/.env` as `TELEGRAM_BOT_TOKEN`, then run alongside the FastAPI server:
+---
+
+## Telegram Bot
 
 ```bash
 cd backend
+
 python -m bot.telegram_bot
 ```
 
-Send the bot: `আমি ঠিক আছি, ঢাকা`. The pulse should appear on the dashboard
-within ~1 second.
+---
 
-The bot tries every message against the "I'm alive" pulse parser first, then
-falls back to the need-broadcast parser below. It talks to the FastAPI
-backend over HTTP (`API_BASE_URL`, default `http://localhost:8000`) rather
-than sharing memory, since it runs as a separate process.
+# Local Development without Supabase
 
-## Coordinator dashboard
-
-`frontend/` is a static Leaflet + h3-js map (dark, low-bandwidth-friendly —
-no framework, no build step, no bundle to download beyond two small CDN
-libraries):
-
-- **Dead Zone heatmap** — every h3 hex is colored by time since its last
-  pulse: green (< 15 min), amber (15–60 min), red (> 60 min — a "dead
-  zone"). This is the core signal the whole platform exists to surface.
-- **Live pulse dots** — individual "I'm alive" reports plotted on the map.
-- **Need Broadcast queue** — the sidebar, sorted by priority then recency,
-  filterable by category/status, with one-click status updates
-  (open → acknowledged → dispatched → fulfilled) gated behind a coordinator
-  key so only authorized responders can move a request through the queue.
-- **Polls every 5s** by default, and opportunistically upgrades to the
-  `/ws/pulses` WebSocket for push updates when the backend has Supabase
-  Realtime configured — falls back to polling seamlessly if not.
-
-## Need Broadcast Engine
-
-Anyone can report a need in plain Bangla and have it auto-categorized and
-priority-scored for the coordinator dashboard:
+DeadZone automatically falls back to an in-memory database if Supabase credentials are not configured or if
 
 ```
-পানি দরকার, মিরপুর ১০          -> category: water,   priority: 4
-জরুরি ঔষধ লাগবে, সিলেট          -> category: medical, priority: 5 (urgent)
-একটা তাঁবু চাই, কক্সবাজার        -> category: shelter, priority: 3
+DEADZONE_DRY_RUN=true
 ```
 
-Categories: `water`, `food`, `medical`, `shelter`, `other`. Priority is 1
-(lowest) to 5 (highest); mentions of urgency, children, pregnancy, or the
-elderly bump the score up a notch. See `backend/services/need_parser.py` for
-the full keyword lists.
+This allows the backend, frontend, and Telegram bot to be tested locally without any cloud infrastructure.
 
-API surface (mirrors the pulses API):
+---
 
-| Endpoint | Method | Purpose |
-| --- | --- | --- |
-| `/api/v1/needs` | `POST` | Parse + persist a need report |
-| `/api/v1/needs` | `GET` | List needs, sorted by priority then recency (filter by `category`/`status`) |
-| `/api/v1/needs/{id}/status` | `PATCH` | Coordinator marks `open` / `acknowledged` / `dispatched` / `fulfilled` |
+# Environment Variables
 
-The `status` field here is intentionally minimal — full aid dispatch
-bookkeeping (which coordinator, which resources, an immutable audit trail)
-is the next feature to build on top of it, not part of this engine.
+| Variable | Description |
+|------------|-------------|
+| SUPABASE_URL | Supabase project URL |
+| SUPABASE_SERVICE_KEY | Service Role Key |
+| TELEGRAM_BOT_TOKEN | Telegram Bot Token |
+| BACKEND_API_KEY | Shared API key |
+| ALLOWED_ORIGINS | CORS Origins |
+| API_BASE_URL | Backend URL |
 
-## Local development without Supabase
+---
 
-Every service falls back to an in-memory store (`backend/db/memory_store.py`)
-when `SUPABASE_URL`/`SUPABASE_SERVICE_KEY` aren't set, or when
-`DEADZONE_DRY_RUN=true`. This lets you run the whole pulse + need flow with
-`uvicorn main:app --reload --port 8000` and `curl` before wiring up a real
-Supabase project. Data in this mode does not persist across restarts and
-isn't shared between the API process and the bot process.
+# Deployment
 
-## Environment variables
+Render deployment is supported using the included
 
-See `backend/.env.example` for the complete contract. Required:
+```
+render.yaml
+```
 
-| Variable | Where | Purpose |
-|---|---|---|
-| `SUPABASE_URL` | backend | Supabase project URL |
-| `SUPABASE_SERVICE_KEY` | backend | Service-role key (server only) |
-| `TELEGRAM_BOT_TOKEN` | backend | Bot token from @BotFather |
-| `ALLOWED_ORIGINS` | backend | Comma-separated CORS origins for the frontend |
-| `BACKEND_API_KEY` | backend + bot | Shared secret gating write endpoints (create pulse/need, update need status). Leave blank for local dev; **set it before any public deployment** — without it, anyone with the URL can forge safety signals or mark real aid requests "fulfilled". |
-| API base URL | frontend | Entered in the dashboard's settings panel (⚙), stored in the browser only — no build-time env var since there's no build step |
+It provisions:
 
-## Deploy (Render)
+- FastAPI backend
+- Static frontend
+- Telegram bot worker
 
-`render.yaml` at the repo root defines three services:
+Environment variables can be configured directly from the Render dashboard.
 
-- `deadzone-api` — Python web service running uvicorn
-- `deadzone-web` — Static site serving the `frontend/` dashboard as-is (no build)
-- `deadzone-bot` — Background worker running the Telegram bot in long-polling mode
+---
 
-Render reads env vars from the blueprint and the dashboard; fill in
-`SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, and `TELEGRAM_BOT_TOKEN` there
-(`BACKEND_API_KEY` is auto-generated). After linking the repo, hit
-**Apply** to provision, then narrow `ALLOWED_ORIGINS` on `deadzone-api`
-from `*` to the deployed `deadzone-web` URL once you have it.
+# Security
 
-## Security notes
+- Telegram user IDs are stored securely.
+- Public API only exposes pulse and need information.
+- Write operations require an API key.
+- H3 aggregation is performed atomically to avoid race conditions.
+- Supabase Row Level Security protects sensitive tables.
 
-A few things worth knowing if you extend this beyond the MVP:
+---
 
-- **`users` is not publicly readable.** It stores `telegram_id`; exposing
-  it would let anyone with the anon key deanonymize which real person sent
-  which pulse. Only `pulses`, `needs`, and `h3_hexes` (aggregates, no
-  identity) are public-read.
-- **Write endpoints require `BACKEND_API_KEY`** once it's set (see
-  Environment variables above). Unset, auth is skipped for frictionless
-  local dev — always set it before deploying anywhere public.
-- **Hex pulse counts increment atomically** via a Postgres function
-  (`increment_hex` in `schema.sql`) rather than a read-then-write round
-  trip from Python, so concurrent pulses during a real spike don't lose
-  counts to a race condition.
+# Roadmap
 
-## License
+- SMS Gateway
+- Offline mesh networking
+- Duplicate need detection
+- NGO authentication
+- Push notifications
+- Disaster analytics
+- AI-assisted resource allocation
 
-MIT — see `LICENSE`.
+---
+
+# Project Status
+
+Current MVP
+
+- ✅ Bangla Pulse Engine
+- ✅ Need Broadcast Engine
+- ✅ Telegram Bot
+- ✅ FastAPI Backend
+- ✅ Coordinator Dashboard
+- ✅ Dead Zone Heatmap
+- ✅ H3 Spatial Indexing
+- ✅ Supabase Integration
+
+Upcoming
+
+- 🚧 SMS Integration
+- 🚧 Mesh Networking
+- 🚧 Offline Synchronization
+- 🚧 NGO Portal
+- 🚧 Volunteer Dispatch System
+
+---
+
+
+
+## Demo Video
+
+https://drive.google.com/file/d/1-GvPj4vcJK11xwu2JOblK6Hq3qKLvPCi/view?usp=sharing
+
+---
+
+
+GitHub:
+https://github.com/madiha-ahmed-chowdhury

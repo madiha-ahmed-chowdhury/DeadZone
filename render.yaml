@@ -40,10 +40,7 @@ services:
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: API_BASE_URL
-        fromService:
-          type: web
-          name: deadzone-api
-          property: hostport
+        value: https://deadzone-api.onrender.com
       - key: BACKEND_API_KEY
         fromService:
           type: web
